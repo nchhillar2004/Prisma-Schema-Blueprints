@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Posts {
+  id        Int        @id @default(autoincrement())
+  image     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  title     String?    @db.VarChar(255)
+  isAdult   Boolean    @default(false)
+  content   String?
+  published Boolean    @default(false)
+  author    Users      @relation(fields: [authorId], references: [id])
+  authorId  Int
+  tags      Tags[]
+  time      String?
+  likes     Likes[]
+  comments  Comments[]
+}
+
+model Likes {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  postId     Int?
+  likedAt    DateTime  @default(now())
+  user       Users     @relation(fields: [userId], references: [id])
+  post       Posts?    @relation(fields: [postId], references: [id])
+  time       String?
+  comments   Comments? @relation(fields: [commentsId], references: [id])
+  commentsId Int?
+  replies    Replies?  @relation(fields: [repliesId], references: [id])
+  repliesId  Int?
+  tags       Tags?     @relation(fields: [tagsId], references: [id])
+  tagsId     Int?
+}
+
+model Comments {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  postId    Int
+  content   String
+  timestamp DateTime  @default(now())
+  Likes     Likes[]
+  user      Users     @relation(fields: [userId], references: [id])
+  post      Posts     @relation(fields: [postId], references: [id])
+  time      String?
+  replies   Replies[]
+}
+
+model Replies {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  commentId Int
+  content   String
+  timestamp DateTime @default(now())
+  likes     Likes[]
+  user      Users    @relation(fields: [userId], references: [id])
+  comment   Comments @relation(fields: [commentId], references: [id])
+  time      String?
+}
+
+model Profile {
+  id        Int     @id @default(autoincrement())
+  bio       String?
+  age       Int?
+  education String?
+  address   String?
+  contact   String?
+  gender    Gender?
+  country   String?
+  isAdult   Boolean @default(false)
+  user      Users   @relation(fields: [userId], references: [id])
+  userId    Int     @unique
+}
+
+model Users {
+  id        Int        @id @default(autoincrement())
+  avatar    String?
+  name      String
+  username  String     @unique
+  email     String?    @unique
+  password  String?
+  server    Server     @default(ASIA)
+  verified  Boolean    @default(false)
+  banned    Boolean    @default(false)
+  role      Role       @default(USER)
+  plan      Plan       @default(BASIC)
+  followers Follows[]  @relation("following")
+  following Follows[]  @relation("follower")
+  blocked   Blocked[]  @relation("blocked")
+  posts     Posts[]
+  likes     Likes[]
+  comments  Comments[]
+  profile   Profile?
+  time      String?
+  replies   Replies[]
+  mails     Mails[]
+  rooms     Rooms?     @relation(fields: [roomsId], references: [id])
+  roomsId   Int?
+  messages  Messages[]
+}
+
+model Follows {
+  follower    Users @relation("follower", fields: [followerId], references: [id])
+  followerId  Int
+  following   Users @relation("following", fields: [followingId], references: [id])
+  followingId Int
+
+  @@id([followerId, followingId])
+}
+
+model Rooms {
+  id        Int        @id @default(autoincrement())
+  members   Users[]
+  messages  Messages[]
+  createdAt DateTime   @default(now())
+  time      String?
+}
+
+model Messages {
+  id       Int      @id @default(autoincrement())
+  image    String?
+  text     String
+  author   Users   @relation(fields: [authorId], references: [id])
+  authorId Int
+  room     Rooms?   @relation(fields: [roomId], references: [id])
+  roomId   Int?
+  sentAt   DateTime @default(now())
+  time     String?
+}
+
+model Blocked {
+  blocked       Users @relation("blocked", fields: [blockedUserId], references: [id])
+  blockedUserId Int
+
+  @@id([blockedUserId])
+}
+
+model Tags {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  posts Posts[]
+  likes Likes[]
+}
+
+enum Plan {
+  BASIC
+  PRO
+  PREMIUM
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum Server {
+  ASIA
+  NAMERICA
+  SAMERICA
+  AUSTRALIA
+  EUROPE
+  AFRICA
+}
+
+model Mails {
+  id       Int       @id @default(autoincrement())
+  image    String?
+  subject  String
+  content  String
+  type     MailType?
+  time     String?
+  author   Users     @relation(fields: [authorId], references: [id])
+  authorId Int
+}
+
+enum MailType {
+  REPORT
+  CONTACT
+  FEEDBACK
+}
